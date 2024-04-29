@@ -25,7 +25,7 @@ func middlewareCors(next http.Handler) http.Handler {
 
 func main() {
 	mux := http.NewServeMux()
-	corsMux := middlewareCors(http.HandlerFunc(greeting))	
+	corsMux := middlewareCors(http.FileServer(http.Dir("./")))	
 	mux.Handle("/hello", corsMux)
 	// http.HandleFunc("/greeting", greeting)
 	
