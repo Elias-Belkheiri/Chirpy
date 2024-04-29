@@ -19,14 +19,14 @@ func middlewareCors(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		next.ServeHTTP(w, r)
+		http.StripPrefix("/app/", next).ServeHTTP(w, r)
 	})
 }
 
 func main() {
 	mux := http.NewServeMux()
 	corsMux := middlewareCors(http.FileServer(http.Dir("./")))	
-	mux.Handle("/", corsMux)
+	mux.Handle("/app/*", corsMux)
 	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -35,5 +35,5 @@ func main() {
 	// http.HandleFunc("/greeting", greeting)
 	
 	log.Println("Starting server....")
-	http.ListenAndServe(":1234", mux)
+	http.ListenAndServe(":1224", mux)
 }
