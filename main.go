@@ -8,19 +8,20 @@ import (
 	// "html"
 	"net/http"
 	"sync"
-	"strconv"
+	// "strconv"
+	"html/template"
 )
 
 type apiConfig struct {
 	mu				sync.Mutex
-	fileserverHits 	int
+	FileserverHits 	int
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.mu.Lock()
 		fmt.Println("Incrementing...")
-		cfg.fileserverHits++
+		cfg.FileserverHits++
 		cfg.mu.Unlock()
 		next.ServeHTTP(w, r)
 	})
@@ -29,13 +30,13 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 func (cfg *apiConfig) middlewareGetMetrics() int {
 	// cfg.mu.Lock()
 	// defer cfg.mu.Unlock()
-	return cfg.fileserverHits
+	return cfg.FileserverHits
 }
 
 func (cfg *apiConfig) middlewareResetMetrics() {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
-	cfg.fileserverHits = 0
+	cfg.FileserverHits = 0
 }
 
 func middlewareCors(next http.Handler) http.Handler {
@@ -53,22 +54,22 @@ func middlewareCors(next http.Handler) http.Handler {
 
 func main() {
 	counter := apiConfig{sync.Mutex{}, 0}
+	templ:= template.Must(template.New("temp").Parse("<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited {{.FileserverHits}} times!</p></body></html>"))
 
 	mux := http.NewServeMux()
 	corsMux := middlewareCors(http.FileServer(http.Dir("./")))	
 
 	mux.Handle("GET /app/*", counter.middlewareMetricsInc(corsMux))
-	mux.Handle("GET /healthz", counter.middlewareMetricsInc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	mux.Handle("GET /api/healthz", counter.middlewareMetricsInc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})))
-	mux.Handle("GET /count", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		count := "count: " + strconv.Itoa(counter.middlewareGetMetrics()) 
-		fmt.Println(count)
-		w.Write([]byte(count))
+	mux.Handle("GET /admin/count", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		templ.Execute(w, counter)
+		// w.Write([]byte(count))
 	}))
-	mux.Handle("POST /reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("POST /api/reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		counter.middlewareResetMetrics()
 		fmt.Println("Counter has been reset")
 	}))
