@@ -57,18 +57,18 @@ func main() {
 	mux := http.NewServeMux()
 	corsMux := middlewareCors(http.FileServer(http.Dir("./")))	
 
-	mux.Handle("/app/*", counter.middlewareMetricsInc(corsMux))
-	mux.Handle("/healthz", counter.middlewareMetricsInc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("GET /app/*", counter.middlewareMetricsInc(corsMux))
+	mux.Handle("GET /healthz", counter.middlewareMetricsInc(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})))
-	mux.Handle("/count", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("GET /count", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		count := "count: " + strconv.Itoa(counter.middlewareGetMetrics()) 
 		fmt.Println(count)
 		w.Write([]byte(count))
 	}))
-	mux.Handle("/reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("POST /reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		counter.middlewareResetMetrics()
 		fmt.Println("Counter has been reset")
 	}))
