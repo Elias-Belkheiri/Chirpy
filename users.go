@@ -6,12 +6,14 @@ import (
 	"io"
 	"log"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	Name		string `json:"name"`
 	Email		string `json:"email"`
 	Password	string `json:"password"`
+	Comp		string `json:"comp"`
 }
 
 func addUser(w http.ResponseWriter, r *http.Request) {
@@ -28,4 +30,11 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Name: ", user.Name)
 	fmt.Println("Email: ", user.Email)
 	fmt.Println("Password: ", user.Password)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+	if err != nil {
+		log.Fatal("Err hashing password")
+	}
+
+	fmt.Println(bcrypt.CompareHashAndPassword(hashedPassword, []byte(user.Comp)))
 }
