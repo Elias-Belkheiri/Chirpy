@@ -73,7 +73,9 @@ func main() {
 		counter.middlewareResetMetrics()
 		fmt.Println("Counter has been reset")
 	}))
-	
+
+	mux.Handle("POST /api/users", http.HandlerFunc(addUser))
+
 	log.Println("Starting server....")
 	http.ListenAndServe(":1224", mux)
 }
